@@ -1,5 +1,8 @@
-import express from "express";
+import express, { Request } from "express";
 import sqlite3 from "sqlite3";
+import { Cat } from "./db";
+
+type CatInput = Omit<Cat, "id">
 
 const app = express();
 app.use(express.json());
@@ -11,23 +14,23 @@ app.get("/", (req, res) => {
 });
 
 app.get("/cats", (req, res) => {
-  db.all("SELECT * FROM cats", (err, rows) => {
-    res.send(rows);
+  db.all("SELECT * FROM cats", (err, cats: Cat[]) => {
+    res.send(cats);
   });
 });
 
-app.get("/cats/:id", (req, res) => {
+app.get("/cats/:id", (req: Request<{id: string}, {}, {}>, res) => {
   const { id } = req.params;
-  db.get("SELECT * FROM cats WHERE id = ?", id, (err, row) => {
-    if (row) {
-      res.send(row);
+  db.get("SELECT * FROM cats WHERE id = ?", id, (err, cat: Cat) => {
+    if (cat) {
+      res.send(cat);
     } else {
       res.sendStatus(404);
     }
   });
 });
 
-app.post("/cats", (req, res) => {
+app.post("/cats", (req: Request<{}, {}, CatInput>, res) => {
   const { name, feature } = req.body;
   db.run(
     "INSERT INTO cats (name, feature) VALUES (?, ?)",
@@ -40,7 +43,7 @@ app.post("/cats", (req, res) => {
   );
 });
 
-app.put("/cats/:id", (req, res) => {
+app.put("/cats/:id", (req: Request<{id: string}, {}, CatInput>, res) => {
   const { id } = req.params;
   const { name, feature } = req.body;
   db.run(
@@ -52,7 +55,7 @@ app.put("/cats/:id", (req, res) => {
   );
 });
 
-app.delete("/cats/:id", (req, res) => {
+app.delete("/cats/:id", (req: Request<{id: string}, {}, {}>, res) => {
   const { id } = req.params;
   db.run("DELETE FROM cats WHERE id = ?", id, function () {
     res.sendStatus(204);
